@@ -44,7 +44,7 @@ const ReqCardDialog = ({ requerimiento, onSave, onlyRead, listaAnalistasGen }) =
             CrearReq(axiosInstance, codAnalistaGen, codResponsable, parseInt(salarioMax), parseInt(salarioMin), descFuncion, descCarreras, parseInt(nVacantes)).then((response) => {
                 if (response) {
                     onSave(response);
-                    CrearProcReq(axiosInstance, response.CONSECREQUE, '0001', '0012', codAnalistaGen).then((response) => {
+                    CrearProcReq(axiosInstance, response.CONSECREQUE, '0001', '0012', codAnalistaGen, null, null).then((response) => {
                         if (response) {
                             console.log(response);
                             setOpen(false);

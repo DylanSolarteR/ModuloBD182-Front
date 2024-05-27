@@ -1,9 +1,9 @@
 import Swal from "sweetalert2";
 
-export async function getAllDisciplinas(axiosInstance) {
+export async function getPruebas(axiosInstance, idDisciplina) {
   try {
-    const response = await axiosInstance.get(`/disciplinas`);
-    // console.log(response.data);
+    const response = await axiosInstance.get(`/pruebas/${idDisciplina}`);
+    console.log(response.data);
     return response.data;
   } catch (error) {
     Swal.fire({

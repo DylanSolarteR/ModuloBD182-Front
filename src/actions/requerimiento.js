@@ -3,7 +3,7 @@ import Swal from "sweetalert2";
 export async function fetchAllReqs(axiosInstance, codEmp) {
   try {
     const response = await axiosInstance.get(`/requerimientos/${codEmp}`);
-    console.log(response.data);
+    // console.log(response.data);
     return response.data;
   } catch (error) {
     Swal.fire({
@@ -54,7 +54,7 @@ export async function CrearReq(
 export async function fetchReq(axiosInstance, consecReque) {
   try {
     const response = await axiosInstance.get(`/requerimiento/${consecReque}`);
-    console.log(response.data);
+    // console.log(response.data);
     return response.data[0];
   } catch (error) {
     Swal.fire({

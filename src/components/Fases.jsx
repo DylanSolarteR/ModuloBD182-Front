@@ -9,9 +9,12 @@ import FechaDialog from "@/components/FechaDialog";
 import Swal from "sweetalert2";
 import { useGlobalContext } from "@/context";
 import { getAllDisciplinas } from '@/actions/disciplina'
-import { getPerfilByDisciplinaId } from '@/actions/perfil'
+import { getPerfilByDisciplinaId, getPerfilAndDisciplina } from '@/actions/perfil'
 
 import { fetchReq } from '@/actions/requerimiento'
+import { CrearProcReq, fetchProcesoReqMaxId, fetchProcesoReq } from '@/actions/procesoRequerimiento'
+import { fetchAllProcesosCandidatos, crearProcesosCandidatos } from '@/actions/procesoCandidato'
+import { getPruebas } from "@/actions/prueba";
 
 function Fase1({ readOnly, procesoReqId, ReqId }) {
     const [codResponsable, setCodResponsable] = useState(0);
@@ -141,7 +144,7 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
 
     const selectPerfilesRef = useRef(null);
     const router = useRouter();
-    const { axiosInstance } = useGlobalContext();
+    const { axiosInstance, user } = useGlobalContext();
 
     const [descPerfil, setDescPerfil] = useState('')
     const [descCarreras, setDescCarreras] = useState('')
@@ -170,12 +173,19 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
         setArrayPerfiles([])
 
         if (readOnly) {
-            console.log('Solo lectura')
-
-
-            //fetch del perfil seleccionado
-
-            //fetch de las carreras seleccionadas
+            // console.log('Solo lectura')
+            fetchProcesoReq(axiosInstance, ReqId, '0002').then(result => {
+                getPerfilAndDisciplina(axiosInstance, ReqId, result.IDPERFIL, '0002').then(data => {
+                    setPerfilSelected({
+                        value: result.IDPERFIL,
+                        label: data.DESPERFIL
+                    })
+                    setCarreraSelected({
+                        value: data.IDDISCIPLINA,
+                        label: data.DESCDISCIPLINA
+                    })
+                })
+            })
         }
     }, [])
 
@@ -198,13 +208,15 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
     }
 
     function handleSubmit() {
+        if (readOnly) { router.push('/dashboard'); return }
         if (carreraSelected === undefined || perfilSelected === undefined) {
             Swal.fire('Selecciona una disciplina y un perfil')
         } else {
             //fetch para enviar los datos
-            console.log(perfilSelected)
-            console.log(carreraSelected)
-            router.push('/dashboard')
+            CrearProcReq(axiosInstance, ReqId, '0002', perfilSelected.value, user.CODEMPLEADO, null, null).then(data => {
+                Swal.fire('Proceso de requerimiento creado', '', 'success')
+                router.push('/dashboard')
+            })
         }
     }
 
@@ -222,7 +234,7 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
 
                 {readOnly ?
                     (
-                        <h2>Seleccionada: {carreraSelected?.label}</h2>
+                        <h2>Seleccionada: {carreraSelected ? carreraSelected.label : "No se encontro la disciplina"}</h2>
                     )
                     : (<Select
                         options={arrayCarreras}
@@ -318,7 +330,7 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
 
                 {readOnly ?
                     (
-                        <h2>Seleccionado: {perfilSelected?.label}</h2>
+                        <h2>Seleccionado: {perfilSelected ? perfilSelected.label : "No se encontro el perfil."}</h2>
                     )
                     : (<Select
                         options={arrayPerfiles}
@@ -395,19 +407,29 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
 function Fase3({ readOnly, procesoReqId, ReqId }) {
     const [convocatoria, setConvocatoria] = useState('')
     const router = useRouter();
+    const { axiosInstance, user } = useGlobalContext();
 
     useEffect(() => {
 
         if (readOnly) {
-            console.log('Solo lectura')
-            //fetch de la convocatoria
-            //setter de la convocatoria
+            // console.log('Solo lectura')
+            fetchProcesoReq(axiosInstance, ReqId, '0003').then(data => {
+                setConvocatoria(data.CONVOCATORIA)
+            })
         }
     }, [])
 
     function handleSubmit() {
         //fetch para enviar los datos
-
+        if (!readOnly) {
+            //fetch para enviar los datos
+            fetchProcesoReq(axiosInstance, ReqId, '0002').then(data => {
+                CrearProcReq(axiosInstance, ReqId, '0003', data.IDPERFIL, user.CODEMPLEADO, convocatoria, null).then(() => {
+                    Swal.fire('Proceso de requerimiento creado', '', 'success')
+                    router.push('/dashboard')
+                })
+            })
+        }
         router.push('/dashboard')
     }
     return (
@@ -431,27 +453,52 @@ function Fase3({ readOnly, procesoReqId, ReqId }) {
             </Button>
         </div>
     )
+
 }
-
 function Fase4({ readOnly, procesoReqId, ReqId }) {
-    const mockConvocados = [
-        { id: "1", nombre: 'Candidato 1' },
-        { id: "2", nombre: 'Candidato 2' },
-        { id: "3", nombre: 'Candidato 3' },
-        { id: "4", nombre: 'Candidato 4' },
-    ];
-
-
 
     const router = useRouter();
+    const { axiosInstance, user } = useGlobalContext();
 
     const [convocados, setConvocados] = useState([]);
     const [seleccionados, setSeleccionados] = useState([]);
     const [invitacion, setInvitacion] = useState('');
 
     useEffect(() => {
-        // Simulando la carga de datos de convocados
-        setConvocados(mockConvocados);
+        // setConvocados(mockConvocados);
+        if (readOnly) {
+            // console.log('Solo lectura')
+            fetchProcesoReq(axiosInstance, ReqId, '0004').then(data => {
+                setInvitacion(data.INVITACION)
+            })
+            fetchAllProcesosCandidatos(axiosInstance, ReqId, '0004').then(data => {
+                if ((data.message)) {
+                    Swal.fire('Ningun candidato fue preseleccionado').then(() =>
+                        router.push('/dashboard')
+                    )
+                } else {
+                    setConvocados(data.map(convocado => {
+                        return {
+                            id: convocado.USUARIO,
+                            nombre: convocado.NOMBRE + ' ' + convocado.APELLIDO
+                        }
+                    }))
+                }
+            })
+
+            // Simulando la carga de datos de convocados
+
+        } else {
+            // Simulando la carga de datos de convocados
+            fetchAllProcesosCandidatos(axiosInstance, ReqId, '0003').then(data => {
+                setConvocados(data.map(convocado => {
+                    return {
+                        id: convocado.USUARIO,
+                        nombre: convocado.NOMBRE + ' ' + convocado.APELLIDO
+                    }
+                }))
+            })
+        }
     }, []);
 
     const handleSeleccionar = (id) => {
@@ -461,12 +508,25 @@ function Fase4({ readOnly, procesoReqId, ReqId }) {
     };
 
     const handleSubmit = () => {
+        if (readOnly) {
+            router.push('/dashboard');
+            return
+        }
         const datosAEnviar = {
             seleccionados,
             invitacion,
         };
         console.log('Datos enviados:', datosAEnviar);
         // Aquí enviarías los datos a tu backend
+        fetchProcesoReq(axiosInstance, ReqId, '0003').then(data => {
+            CrearProcReq(axiosInstance, ReqId, '0004', data.IDPERFIL, user.CODEMPLEADO, data.CONVOCATORIA, datosAEnviar.invitacion).then(data => {
+                Swal.fire('Proceso de requerimiento creado', '', 'success').then(() => {
+                    router.push('/dashboard')
+                })
+            })
+        })
+
+
 
         // Limpiar la selección después de enviar
         setSeleccionados([]);
@@ -479,22 +539,22 @@ function Fase4({ readOnly, procesoReqId, ReqId }) {
             <div className="mt-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold text-primaryText">Elija los convocados a elegir</h2>
+                        <h2 className="text-xl font-semibold text-primaryText">{readOnly ? "Convocados elegidos" : "Elija los convocados a elegir"}</h2>
                         <div className="max-h-[50vh] overflow-y-auto rounded ">
 
                             {convocados.map((convocado) => (
                                 <div key={convocado.id} className="bg-secondaryAccent/50 text-primaryText p-4 rounded-lg flex items-center justify-between mt-2">
                                     <div className="flex items-center">
-                                        <input
+                                        {!readOnly && <input
                                             type="checkbox"
                                             checked={seleccionados.includes(convocado.id)}
                                             onChange={() => handleSeleccionar(convocado.id)}
                                             className="mr-2"
                                             disabled={readOnly}
-                                        />
+                                        />}
                                         <p className="text-lg font-semibold">{convocado.nombre}</p>
                                     </div>
-                                    <CVDialog id={convocado.id} />
+                                    {!readOnly && <CVDialog id={convocado.id} />}
                                 </div>
                             ))}
                         </div>
@@ -522,34 +582,84 @@ function Fase4({ readOnly, procesoReqId, ReqId }) {
 }
 
 function Fase5({ readOnly, procesoReqId, ReqId }) {
-    const mockInvitados = [
-        { id: "1", nombre: 'Invitado 1' },
-        { id: "2", nombre: 'Invitado 2' },
-        { id: "3", nombre: 'Invitado 3' },
-        { id: "4", nombre: 'Invitado 4' },
-    ];
     const router = useRouter();
+    const { axiosInstance, user } = useGlobalContext();
 
     const [invitados, setInvitados] = useState([]);
     const [seleccionados, setSeleccionados] = useState([]);
 
     useEffect(() => {
         // Simulando la carga de datos de convocados
-        setInvitados(mockInvitados);
+        if (readOnly) {
+            fetchAllProcesosCandidatos(axiosInstance, ReqId, '0005').then(data => {
+                if ((data.message)) {
+                    Swal.fire('Ningun candidato fue preseleccionado').then(() =>
+                        router.push('/dashboard')
+                    )
+                } else {
+
+                    setInvitados(data.map(convocado => {
+                        return {
+                            id: convocado.USUARIO,
+                            nombre: convocado.NOMBRE + ' ' + convocado.APELLIDO
+                        }
+                    }))
+                }
+            })
+
+        } else {
+            fetchAllProcesosCandidatos(axiosInstance, ReqId, '0004').then(data => {
+                if ((data.message)) {
+                    Swal.fire('Ningun invitado acepto la invitacion').then(() =>
+                        router.push('/dashboard')
+                    )
+                } else {
+                    setInvitados(data.map(convocado => {
+                        return {
+                            id: convocado.USUARIO,
+                            nombre: convocado.NOMBRE + ' ' + convocado.APELLIDO
+                        }
+                    }))
+                }
+
+            })
+        }
     }, []);
 
     const handleSeleccionar = (id) => {
         setSeleccionados((prev) =>
             prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
         );
+
     };
 
     const handleSubmit = () => {
+        if (readOnly) { router.push('/dashboard'); return }
         const datosAEnviar = {
             seleccionados,
         };
         console.log('Datos enviados:', datosAEnviar);
-        // Aquí enviarías los datos a tu backend
+
+        // fetchProcesoReq(axiosInstance, ReqId, '0004').then(data => {
+        //     CrearProcReq(axiosInstance, ReqId, '0005', data.IDPERFIL, user.CODEMPLEADO, data.CONVOCATORIA, data.INVITACION).then((data) => {
+        //         for (const seleccionado of datosAEnviar.seleccionados) {
+        //             crearProcesosCandidatos(axiosInstance, seleccionado, ReqId, '0005', data.IDPERFIL, data.CONSPROCESO).then(() => {
+        //                 console.log('Proceso de candidato creado')
+        //             })
+        //         }
+        //         Swal.fire('Proceso de requerimiento creado', '', 'success').then(() => {
+        //             router.push('/dashboard')
+        //         })
+        //     })
+        // })
+
+        fetchProcesoReq(axiosInstance, ReqId, '0004').then(data => {
+            CrearProcReq(axiosInstance, ReqId, '0005', data.IDPERFIL, user.CODEMPLEADO, data.CONVOCATORIA, data.INVITACION).then((data) => {
+                Swal.fire('Proceso de requerimiento creado', '', 'success').then(() => {
+                    router.push('/dashboard')
+                })
+            })
+        })
 
         // Limpiar la selección después de enviar
         setSeleccionados([]);
@@ -559,22 +669,22 @@ function Fase5({ readOnly, procesoReqId, ReqId }) {
 
     return (
         <div>
-            <h2 className="text-xl font-semibold text-primaryText">Elija los invitados a preseleccionar</h2>
+            <h2 className="text-xl font-semibold text-primaryText">{readOnly ? "Invitados Preseleccionados" : "Elija los invitados a preseleccionar"}</h2>
             <div className="max-h-[50vh] overflow-y-auto rounded grid grid-cols-2 gap-4 px-2 ">
 
                 {invitados.map((invitado) => (
                     <div key={invitado.id} className="bg-secondaryAccent/50 text-primaryText p-4 rounded-lg flex items-center justify-between mt-2">
                         <div className="flex items-center">
-                            <input
+                            {!readOnly && <input
                                 type="checkbox"
                                 checked={seleccionados.includes(invitado.id)}
                                 onChange={() => handleSeleccionar(invitado.id)}
                                 className="mr-2"
                                 disabled={readOnly}
-                            />
+                            />}
                             <p className="text-lg font-semibold">{invitado.nombre}</p>
                         </div>
-                        <CVDialog id={invitado.id} />
+                        {!readOnly && <CVDialog id={invitado.id} />}
                     </div>
                 ))}
             </div>
@@ -589,13 +699,7 @@ function Fase5({ readOnly, procesoReqId, ReqId }) {
 }
 
 function Fase6({ readOnly, procesoReqId, ReqId }) {
-    // mockData para los convocados
-    const convocadosMockData = [
-        { id: 1, nombre: 'Convocado 1', perfilId: 101 },
-        { id: 2, nombre: 'Convocado 2', perfilId: 102 },
-        { id: 3, nombre: 'Convocado 3', perfilId: 103 },
-        { id: 4, nombre: 'Convocado 4', perfilId: 104 },
-    ];
+
 
     // mockData para las pruebas (según perfilId)
     const pruebasMockData = {
@@ -605,7 +709,7 @@ function Fase6({ readOnly, procesoReqId, ReqId }) {
         103: ['Prueba 2', 'Prueba 3', 'Prueba 4'],
         104: ['Prueba 1', 'Prueba 2', 'Prueba 3', 'Prueba 4'],
     };
-
+    const { axiosInstance, user } = useGlobalContext();
     const [convocados, setConvocados] = useState([]);
     const [pruebas, setPruebas] = useState({});
     const [selectedConvocado, setSelectedConvocado] = useState(null);
@@ -613,11 +717,48 @@ function Fase6({ readOnly, procesoReqId, ReqId }) {
     const [fecha, setFecha] = useState({});
 
     useEffect(() => {
-        setConvocados(convocadosMockData);
+        if (readOnly) {
+            fetchAllProcesosCandidatos(axiosInstance, ReqId, '0006').then(data => {
+                if ((data.message)) {
+                    Swal.fire('Ningun candidato fue preseleccionado').then(() =>
+                        router.push('/dashboard')
+                    )
+                } else {
+
+                    setConvocados(data.map(convocado => {
+                        return {
+                            id: convocado.USUARIO,
+                            nombre: convocado.NOMBRE + ' ' + convocado.APELLIDO,
+                            perfilId: convocado.IDPERFIL
+                        }
+                    }))
+                }
+            })
+
+        } else {
+            fetchAllProcesosCandidatos(axiosInstance, ReqId, '0005').then(data => {
+                if ((data.message)) {
+                    Swal.fire('Ningun invitado acepto la invitacion').then(() =>
+                        router.push('/dashboard')
+                    )
+                } else {
+                    setConvocados(data.map((convocado) => {
+                        return {
+                            id: convocado.USUARIO,
+                            nombre: convocado.NOMBRE + ' ' + convocado.APELLIDO,
+                            perfilId: convocado.IDPERFIL
+                        }
+                    }))
+
+                }
+            })
+        }
     }, []);
 
     const fetchPruebas = async (perfilId) => {
-        return pruebasMockData[perfilId] || [];
+        const { IDDISCIPLINA } = await getPerfilAndDisciplina(axiosInstance, ReqId, perfilId, '0005')
+        const result = await getPruebas(axiosInstance, IDDISCIPLINA);
+        return result.map(prueba => prueba.DESCPRUEBA)
     };
 
     const handleConvocadoClick = async (convocado) => {
@@ -673,9 +814,22 @@ function Fase6({ readOnly, procesoReqId, ReqId }) {
             })),
         }));
         console.log('Enviando payload:', payload);
+
+        // fetchProcesoReq(axiosInstance, ReqId, '0005').then(data => {
+        //     CrearProcReq(axiosInstance, ReqId, '0006', data.IDPERFIL, user.CODEMPLEADO, data.CONVOCATORIA, data.INVITACION).then(() => {
+        //         for (const candidato of payload) {
+        //             crearProcesosCandidatos(axiosInstance, candidato.convocadoId, ReqId, '0006', data.IDPERFIL, procesoReqId).then(() => {
+        //                 console.log('Proceso de candidato creado')
+        //             })
+        //         }
+        //         Swal.fire('Proceso de requerimiento creado', '', 'success').then(() => {
+        //             router.push('/dashboard')
+        //         })
+        //     })
+        // })
     };
 
-    return (
+    return (convocados &&
         <div>
             <div className="flex">
                 <div className="w-1/2 p-4">

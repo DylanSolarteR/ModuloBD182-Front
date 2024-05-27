@@ -1,9 +1,15 @@
 import Swal from "sweetalert2";
 
-export async function getPerfilByDisciplinaId(axiosInstance, DisciplinaId) {
+export async function fetchAllProcesosCandidatos(
+  axiosInstance,
+  consecReque,
+  idFase
+) {
   try {
-    const response = await axiosInstance.get(`/perfiles/${DisciplinaId}`);
-    // console.log(response.data);
+    const response = await axiosInstance.get(
+      `/procCandidatos/${consecReque}/${idFase}`
+    );
+    console.log(response.data);
     return response.data;
   } catch (error) {
     Swal.fire({
@@ -12,20 +18,26 @@ export async function getPerfilByDisciplinaId(axiosInstance, DisciplinaId) {
       icon: "error",
       confirmButtonText: "OK",
     });
+    console.log(error);
     return false;
   }
 }
-
-export async function getPerfilAndDisciplina(
+export async function crearProcesosCandidatos(
   axiosInstance,
+  usuario,
   consecReque,
+  idFase,
   idPerfil,
-  idFase
+  ConsProceso
 ) {
   try {
-    const response = await axiosInstance.get(
-      `/descPerfilDisciplina/${consecReque}/${idPerfil}/${idFase}`
-    );
+    const response = await axiosInstance.post(`/procCandidato/`, {
+      usuario: usuario,
+      consecReque: consecReque,
+      idFase: idFase,
+      idPerfil: idPerfil,
+      ConsProceso: ConsProceso,
+    });
     console.log(response.data);
     return response.data[0];
   } catch (error) {
@@ -35,6 +47,7 @@ export async function getPerfilAndDisciplina(
       icon: "error",
       confirmButtonText: "OK",
     });
+    console.log(error);
     return false;
   }
 }

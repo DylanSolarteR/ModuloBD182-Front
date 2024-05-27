@@ -1,10 +1,10 @@
 import Swal from "sweetalert2";
 
-export async function getAllDisciplinas(axiosInstance) {
+export async function getHv(axiosInstance, usuario) {
   try {
-    const response = await axiosInstance.get(`/disciplinas`);
+    const response = await axiosInstance.get(`/hojaVida/${usuario}`);
     // console.log(response.data);
-    return response.data;
+    return response.data[0];
   } catch (error) {
     Swal.fire({
       title: "Error",

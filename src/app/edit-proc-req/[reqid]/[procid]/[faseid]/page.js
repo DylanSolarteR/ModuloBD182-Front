@@ -13,33 +13,38 @@ import {
 } from "@/components/Fases";
 import Swal from "sweetalert2";
 
+import { useGlobalContext } from "@/context";
+
+import { fetchProcesoReqMaxId } from "@/actions/procesoRequerimiento";
+
 function page({ params }) {
   const [fase, setFase] = useState(undefined);
   const [readOnly, setReadOnly] = useState(false);
   const [faseNoDispBool, setFaseNoDispBool] = useState(false);
   let FaseComponent = null;
   const router = useRouter();
+  const { axiosInstance } = useGlobalContext();
 
   useEffect(() => {
     let currentFaseId = parseInt(params.faseid);
-    //fetch de la ultima fase del proceso
-    // fetch(`/api/procesos/${params.procid}/${params.reqid}`)
-    //   .then((res) => res.json())
-    //   .then((data) => {
-    //     if (data < 1 || data > 8) return;
-    //     setFase(data);
-    //     if (data != params.faseid) setReadOnly(true);
-    //   });
+
     if (currentFaseId < 1 || currentFaseId > 7 || isNaN(currentFaseId)) {
       Swal.fire({
         title: "Error",
         text: "El id de la fase no es valido.",
         icon: "error",
       }).then(() => router.push("/dashboard"));
-      router.push("/dashboard");
     } else {
-      setFase(currentFaseId);
-      // setFaseNoDispBool(currentFaseId > 2 && currentFaseId < 8);
+      fetchProcesoReqMaxId(axiosInstance, params.reqid).then((data) => {
+        const maxId = parseInt(data.IDFASE);
+        if (maxId >= currentFaseId) {
+          setReadOnly(true);
+        }
+        if (maxId + 1 < currentFaseId) {
+          setFaseNoDispBool(true);
+        }
+        setFase(currentFaseId);
+      });
     }
   }, []);
 
@@ -102,7 +107,9 @@ function page({ params }) {
     );
   }
   if (fase === 5) {
-    FaseComponent = (
+    FaseComponent = faseNoDispBool ? (
+      faseNoDisp
+    ) : (
       <Fase5
         readOnly={readOnly}
         ReqId={parseInt(params.reqid)}
