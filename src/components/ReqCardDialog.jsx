@@ -4,16 +4,20 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Eye } from 'lucide-react';
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button';
+import { CrearReq } from '@/actions/requerimiento';
+import { CrearProcReq } from '@/actions/procesoRequerimiento';
+import { useGlobalContext } from "@/context";
 
 const ReqCardDialog = ({ requerimiento, onSave, onlyRead, listaAnalistasGen }) => {
+    const { axiosInstance, user } = useGlobalContext();
     const [open, setOpen] = useState(false);
-    const [codResponsable, setCodResponsable] = useState(requerimiento.codEmpleado);
-    const [salarioMax, setSalarioMax] = useState(requerimiento.salarioMax);
-    const [salarioMin, setSalarioMin] = useState(requerimiento.salarioMin);
-    const [descFuncion, setDescFuncion] = useState(requerimiento.desFuncion);
-    const [descCarreras, setDescCarreras] = useState(requerimiento.desCarreras);
-    const [nVacantes, setNVacantes] = useState(requerimiento.nVvacantes);
-    const [codAnalistaGen, setCodAnalistaGen] = useState(requerimiento.codAnalistaGen);
+    const [codResponsable, setCodResponsable] = useState(user.CODEMPLEADO);
+    const [salarioMax, setSalarioMax] = useState(requerimiento.SALARIOMAX);
+    const [salarioMin, setSalarioMin] = useState(requerimiento.SALARIOMIN);
+    const [descFuncion, setDescFuncion] = useState(requerimiento.DESFUNCION);
+    const [descCarreras, setDescCarreras] = useState(requerimiento.DESCARRERAS);
+    const [nVacantes, setNVacantes] = useState(requerimiento.NVVACANTES);
+    const [codAnalistaGen, setCodAnalistaGen] = useState(requerimiento.CODEMPLEADO);
     const [nombreAnalistaGen, setNombreAnalistaGen] = useState("");
     const [error, setError] = useState(false);
 
@@ -25,21 +29,30 @@ const ReqCardDialog = ({ requerimiento, onSave, onlyRead, listaAnalistasGen }) =
         setError(true);
         return false;
     }
+    function clearFields() {
+        setSalarioMax(0);
+        setSalarioMin(0);
+        setDescFuncion("");
+        setDescCarreras("");
+        setNVacantes(0);
+        setCodAnalistaGen(0);
+        setNombreAnalistaGen("");
+    }
 
     const handleSubmit = () => {
-
         if (validation()) {
-            onSave({
-                ...requerimiento,
-                codEmpleado: codResponsable,
-                salarioMax: salarioMax,
-                salarioMin: salarioMin,
-                desFuncion: descFuncion,
-                desCarreras: descCarreras,
-                nVvacantes: nVacantes,
-                codAnalistaGen: codAnalistaGen
+            CrearReq(axiosInstance, codAnalistaGen, codResponsable, parseInt(salarioMax), parseInt(salarioMin), descFuncion, descCarreras, parseInt(nVacantes)).then((response) => {
+                if (response) {
+                    onSave(response);
+                    CrearProcReq(axiosInstance, response.CONSECREQUE, '0001', '0012', codAnalistaGen).then((response) => {
+                        if (response) {
+                            console.log(response);
+                            setOpen(false);
+                            clearFields();
+                        }
+                    });
+                }
             });
-            setOpen(false);
         }
     };
 
@@ -137,7 +150,7 @@ const ReqCardDialog = ({ requerimiento, onSave, onlyRead, listaAnalistasGen }) =
                                 <label className="block text-sm font-medium">ID Analista General</label>
                                 <input
                                     type="text"
-                                    value={requerimiento.codAnalistaGen}
+                                    value={codAnalistaGen}
                                     disabled
                                     className="w-full mt-1 p-2 bg-secondaryBg text-primaryText/40 border border-borderColor rounded cursor-not-allowed"
                                 />
@@ -146,7 +159,7 @@ const ReqCardDialog = ({ requerimiento, onSave, onlyRead, listaAnalistasGen }) =
                                 <label className="block text-sm font-medium">Analista General</label>
                                 <input
                                     type="text"
-                                    value={listaAnalistasGen.find((analista) => analista.id === requerimiento.codAnalistaGen)?.nombre}
+                                    value={listaAnalistasGen.find((analista) => analista.id === codAnalistaGen)?.nombre}
                                     disabled
                                     className="w-full mt-1 p-2 bg-secondaryBg text-primaryText/40 border border-borderColor rounded cursor-not-allowed"
                                 />

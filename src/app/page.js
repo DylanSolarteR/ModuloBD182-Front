@@ -1,22 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { fetchUser } from "@/actions/cargo";
+import { useGlobalContext } from "@/context";
 
 export default function Home() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-  const handleSubmit = (e) => {
+  const { axiosInstance, setUser, user } = useGlobalContext();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateEmail(email)) {
       setError("Por favor, ingrese un correo electrónico válido.");
       return;
     }
-    setError("");
-    router.push("/dashboard");
+    const response = await fetchUser(axiosInstance, email);
+    if (response) {
+      setError("");
+      setUser(response);
+      router.push("/dashboard");
+    }
+    return;
   };
 
   const validateEmail = (email) => {

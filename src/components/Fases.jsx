@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { cn } from '@/lib/utils'
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
@@ -7,6 +7,11 @@ import Select from 'react-select';
 import CVDialog from "@/components/CVDialog";
 import FechaDialog from "@/components/FechaDialog";
 import Swal from "sweetalert2";
+import { useGlobalContext } from "@/context";
+import { getAllDisciplinas } from '@/actions/disciplina'
+import { getPerfilByDisciplinaId } from '@/actions/perfil'
+
+import { fetchReq } from '@/actions/requerimiento'
 
 function Fase1({ readOnly, procesoReqId, ReqId }) {
     const [codResponsable, setCodResponsable] = useState(0);
@@ -18,29 +23,23 @@ function Fase1({ readOnly, procesoReqId, ReqId }) {
     const [codAnalistaGen, setCodAnalistaGen] = useState(0);
     const [nombreAnalistaGen, setNombreAnalistaGen] = useState('');
 
+    const { axiosInstance } = useGlobalContext();
+
     const router = useRouter();
 
     useEffect(() => {
         //fetch de la primera fase del req
         //Como readOnly siempre es true en esta fase, se hace el fetch de los datos y se asignan a los estados
-        //fetch(`/api/procesos/${ReqId}/${procesoReqId}`)
-        //    .then(res => res.json())
-        //    .then(data => {
-        //        setCodResponsable(data.codResponsable)
-        //        setSalarioMax(data.salarioMax)
-        //        setSalarioMin(data.salarioMin)
-        //        setDescFuncion(data.descFuncion)
-        //        setDescCarreras(data.descCarreras)
-        //        setNVacantes(data.nVacantes)
-        //        setCodAnalistaGen(data.codAnalistaGen)
-
-        //        //fetch de el analista general
-        //        //fetch(`/api/analistas/${data.codAnalistaGen}`)
-        //        //    .then(res => res.json())
-        //        //    .then(data => setNombreAnalistaGen(data.nombre))
-
-        //    })
-        //    .catch(err => console.log(err))
+        fetchReq(axiosInstance, ReqId).then(data => {
+            setCodResponsable(data.EMP_CODEMPLEADO)
+            setSalarioMax(data.SALARIOMAX)
+            setSalarioMin(data.SALARIOMIN)
+            setDescFuncion(data.DESFUNCION)
+            setDescCarreras(data.DESCARRERAS)
+            setNVacantes(data.NVVACANTES)
+            setCodAnalistaGen(data.CODEMPLEADO)
+            setNombreAnalistaGen(data.NOMEMPLEADO + " " + data.APELLEMPLEADO)
+        })
     }, [])
 
 
@@ -139,37 +138,10 @@ function Fase1({ readOnly, procesoReqId, ReqId }) {
 }
 
 function Fase2({ readOnly, procesoReqId, ReqId }) {
+
+    const selectPerfilesRef = useRef(null);
     const router = useRouter();
-    const MockDisciplinas = [
-        {
-            value: 'Disciplina 1', label: "Disciplina 1",
-            perfiles:
-                [{ value: 'Perfil 1', label: 'Perfil 1' },
-                { value: 'Perfil 2', label: 'Perfil 2' },
-                { value: 'Perfil 3', label: 'Perfil 3' },]
-        },
-        {
-            value: 'Disciplina 2', label: "Disciplina 2",
-            perfiles:
-                [{ value: 'Perfil 4', label: 'Perfil 4' },
-                { value: 'Perfil 5', label: 'Perfil 5' },
-                { value: 'Perfil 6', label: 'Perfil 6' },]
-        },
-        {
-            value: 'Disciplina 3', label: "Disciplina 3",
-            perfiles:
-                [{ value: 'Perfil 7', label: 'Perfil 7' },
-                { value: 'Perfil 8', label: 'Perfil 8' },
-                { value: 'Perfil 9', label: 'Perfil 9' },]
-        },
-        {
-            value: 'Disciplina 4', label: "Disciplina 4",
-            perfiles:
-                [{ value: 'Perfil 10', label: 'Perfil 10' },
-                { value: 'Perfil 11', label: 'Perfil 11' },
-                { value: 'Perfil 12', label: 'Perfil 12' },]
-        },
-    ]
+    const { axiosInstance } = useGlobalContext();
 
     const [descPerfil, setDescPerfil] = useState('')
     const [descCarreras, setDescCarreras] = useState('')
@@ -180,13 +152,22 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
 
     useEffect(() => {
 
-        //fetch de las carreras
-        setArrayCarreras(MockDisciplinas)
-        //fetch de los perfiles
-        setArrayPerfiles([])
+        fetchReq(axiosInstance, ReqId).then(data => {
+            setDescPerfil(data.DESFUNCION)
+            setDescCarreras(data.DESCARRERAS)
+        })
+        getAllDisciplinas(axiosInstance).then(data => {
+            const arrayDisciplinas = data.map(disciplina => {
+                return {
+                    value: disciplina.IDDISCIPLINA,
+                    label: disciplina.DESCDISCIPLINA,
+                }
+            })
+            setArrayCarreras(arrayDisciplinas)
+            // console.log(arrayDisciplinas)
+        })
 
-        //fetch de el procesoReq con la faseId 1
-        //setters de los datos de las descripciones
+        setArrayPerfiles([])
 
         if (readOnly) {
             console.log('Solo lectura')
@@ -198,11 +179,28 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
         }
     }, [])
 
+    function fetchPerfiles(DisciplinaId) {
+        setArrayPerfiles([])
+        getPerfilByDisciplinaId(axiosInstance, DisciplinaId).then(data => {
+
+            if (data.message === 'La disciplina no tiene Perfiles') {
+                setArrayPerfiles([])
+                Swal.fire('La disciplina no tiene perfiles')
+            } else {
+                setArrayPerfiles(data.map(perfil => {
+                    return {
+                        value: perfil.IDPERFIL,
+                        label: perfil.DESPERFIL,
+                    }
+                }))
+            }
+        })
+    }
+
     function handleSubmit() {
         if (carreraSelected === undefined || perfilSelected === undefined) {
-            alert('Selecciona una disciplina y un perfil')
+            Swal.fire('Selecciona una disciplina y un perfil')
         } else {
-
             //fetch para enviar los datos
             console.log(perfilSelected)
             console.log(carreraSelected)
@@ -219,7 +217,7 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
                 <textarea
                     value={descCarreras}
                     disabled
-                    className={cn("w-full mt-1 p-2 bg-secondaryBg text-primaryText border border-borderColor rounded resize-none h-52", readOnly && "cursor-not-allowed text-primaryText/40")}
+                    className={cn("w-full mt-1 p-2 bg-secondaryBg text-primaryText border border-borderColor rounded resize-none h-52 cursor-not-allowed text-primaryText/40")}
                 />
 
                 {readOnly ?
@@ -227,11 +225,15 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
                         <h2>Seleccionada: {carreraSelected?.label}</h2>
                     )
                     : (<Select
-                        closeMenuOnSelect={false}
-                        cacheOptions
-                        options={MockDisciplinas}
+                        options={arrayCarreras}
                         defaultOptions
-                        onChange={(selected) => { setCarreraSelected(selected), setArrayPerfiles(selected.perfiles); setPerfilSelected(undefined) }}
+                        onChange={(selected) => {
+                            setCarreraSelected(selected);
+                            fetchPerfiles(selected.value);
+                            setPerfilSelected(undefined);
+                            setArrayPerfiles([]);
+                            selectPerfilesRef.current.setValue(undefined);
+                        }}
                         isSearchable={false}
                         placeholder="Selecciona las carreras"
                         styles={{
@@ -311,7 +313,7 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
                 <textarea
                     value={descPerfil}
                     disabled
-                    className={cn("w-full mt-1 p-2 bg-secondaryBg text-primaryText border border-borderColor rounded resize-none h-52", readOnly && "cursor-not-allowed text-primaryText/40")}
+                    className={cn("w-full mt-1 p-2 bg-secondaryBg text-primaryText border border-borderColor rounded resize-none h-52 cursor-not-allowed text-primaryText/40")}
                 />
 
                 {readOnly ?
@@ -319,12 +321,12 @@ function Fase2({ readOnly, procesoReqId, ReqId }) {
                         <h2>Seleccionado: {perfilSelected?.label}</h2>
                     )
                     : (<Select
-                        cacheOptions
                         options={arrayPerfiles}
                         onChange={(selected) => { setPerfilSelected(selected) }}
                         placeholder="Selecciona los perfiles"
                         disabled={readOnly}
                         isSearchable={false}
+                        ref={selectPerfilesRef}
                         styles={{
                             control: (styles) => {
                                 return {
@@ -659,7 +661,7 @@ function Fase6({ readOnly, procesoReqId, ReqId }) {
             }
         }
         if (!isValid) {
-            alert('Todos los convocados deben tener pruebas y fechas asignadas.');
+            Swal.fire('Todos los convocados deben tener pruebas y fechas asignadas.');
             return;
         }
 

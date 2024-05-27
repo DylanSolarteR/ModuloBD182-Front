@@ -1,11 +1,32 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserIcon, LogOutIcon, HomeIcon } from "lucide-react";
+import { useGlobalContext } from "@/context";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const Layout = ({ children }) => {
   const [name, setName] = useState("Nombre");
   const [role, setRole] = useState("Rol");
   const [date, setDate] = useState("DD/MM/YYYY");
+  const router = useRouter();
+
+  const { user, setUser } = useGlobalContext();
+  useEffect(() => {
+    if (user) {
+      setName(`${user.NOMEMPLEADO} ${user.APELLEMPLEADO}`);
+      setRole(user.DESCCARGO);
+      setDate(
+        new Date().toLocaleDateString("es-ES", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+      );
+    } else {
+      router.push("/");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-primaryBg text-primaryText">
@@ -22,20 +43,29 @@ const Layout = ({ children }) => {
             </div>
           </div>
           <nav>
-            <a
+            <Link
               href="/dashboard"
               className="flex items-center mb-2 p-2 rounded hover:bg-primaryAccent hover:text-primaryBg transition-colors"
             >
-              <HomeIcon className="w-6 h-6 mr-2" />
-              Dashboard
-            </a>
-            <a
+              <button className="flex items-center rounded hover:bg-primaryAccent hover:text-primaryBg transition-colors">
+                <HomeIcon className="w-6 h-6 mr-2" />
+                Dashboard
+              </button>
+            </Link>
+            <Link
               href="/"
               className="flex items-center p-2 rounded hover:bg-primaryAccent hover:text-primaryBg transition-colors"
             >
-              <LogOutIcon className="w-6 h-6 mr-2" />
-              Logout
-            </a>
+              <button
+                onClick={(e) => {
+                  setUser(null);
+                }}
+                className="flex items-center rounded hover:bg-primaryAccent hover:text-primaryBg transition-colors"
+              >
+                <LogOutIcon className="w-6 h-6 mr-2" />
+                Logout
+              </button>
+            </Link>
           </nav>
         </div>
       </aside>

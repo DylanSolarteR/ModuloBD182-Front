@@ -73,7 +73,7 @@ function page({ params }) {
   if (fase === 2) {
     FaseComponent = (
       <Fase2
-        readOnly={true}
+        readOnly={readOnly}
         ReqId={parseInt(params.reqid)}
         procesoReqId={params.procid}
       />

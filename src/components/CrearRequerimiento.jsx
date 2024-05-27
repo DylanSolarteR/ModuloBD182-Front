@@ -1,21 +1,19 @@
 "use client";
 import ReqCardDialog from '@/components/ReqCardDialog'
 
-function CrearRequerimiento({ handleSave, codUsuario, nextConsec, listaAnalistasGen }) {
+function CrearRequerimiento({ handleSave, codUsuario, listaAnalistasGen }) {
 
     return (
         <div>
             <ReqCardDialog
                 requerimiento={{
-                    consecReque: nextConsec,
-                    codEmpleado: codUsuario,
                     fechaReque: new Date().toLocaleDateString(),
-                    salarioMax: 0,
-                    salarioMin: 0,
-                    desFuncion: "",
-                    desCarreras: "",
-                    nVvacantes: 0,
-                    codAnalistaGen: 0
+                    SALARIOMAX: 0,
+                    SALARIOMIN: 0,
+                    DESFUNCION: "",
+                    DESCARRERAS: "",
+                    NVVACANTES: 0,
+                    CODEMPLEADO: 0
                 }}
                 onSave={handleSave}
                 onlyRead={false}

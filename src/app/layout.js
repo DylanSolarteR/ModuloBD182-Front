@@ -1,7 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { PrimeReactProvider, PrimeReactContext } from "primereact/api";
-
+import { GlobalWrapper } from "@/context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -12,9 +11,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <PrimeReactProvider>
-        <body className={inter.className}>{children}</body>
-      </PrimeReactProvider>
+      <body className={inter.className}>
+        <GlobalWrapper>{children}</GlobalWrapper>
+      </body>
     </html>
   );
 }
