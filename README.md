@@ -25,6 +25,6 @@ Este es la capa del Front para el proyecto del modulo de la materia Bases de Dat
 
 Para ver la pagina, abra en su navegador una pestaña con la url [http://localhost:3000](http://localhost:3000).
 
-Para probar todas las funcionalidades asegurese de haber ejecutado con anterioridad el [Servidor Backednd](https://github.com/DylanSolarteR/ModuloBD182-Back).
+Para probar todas las funcionalidades asegurese de haber ejecutado con anterioridad el [Servidor Backend](https://github.com/DylanSolarteR/ModuloBD182-Back).
 
 En la pagina de inicio de sesion, asegurese de ingresar correos electronicos que se encuentren en la base de datos, y dependiendo del rol del empleado se le mostrara un dashboard diferente. 
