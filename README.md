@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+Este es la capa del Front para el proyecto del modulo de la materia Bases de Datos 1 Grupo 82. A continuación, se detallan las instrucciones para la instalación y ejecución del proyecto.
 
-## Getting Started
+## Requisitos previos
 
-First, run the development server:
+- Node.js (versión 14 o superior)
+- npm (versión 6 o superior)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Instalación
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Clona el repositorio en tu máquina local:
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+    ```bash
+    git clone https://github.com/DylanSolarteR/ModuloBD182-Back.git
+    ```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+2. Instala las dependencias necesarias, dentro de la carpeta raiz del proyecto:
 
-## Learn More
+    ```bash
+    npm i
+    ```
+3. Ejecute el proyecto
+   ```bash
+    npm run dev
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+Para ver la pagina, abra en su navegador una pestaña con la url [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para probar todas las funcionalidades asegurese de haber ejecutado con anterioridad el [Servidor Backednd](https://github.com/DylanSolarteR/ModuloBD182-Back).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+En la pagina de inicio de sesion, asegurese de ingresar correos electronicos que se encuentren en la base de datos, y dependiendo del rol del empleado se le mostrara un dashboard diferente. 
